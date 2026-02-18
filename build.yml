@@ -7,10 +7,98 @@ jobs:
     runs-on: macos-latest
     steps:
       - run: |
-          echo "APPL????" > Info.plist
+          # Создаём main.swift
+          cat > main.swift << 'EOF'
+          import UIKit
+          import SwiftUI
+
+          let GATE1 = "+79188514674"
+          let GATE2 = "+79188515512"
+          let WICKET = "+79188513428"
+
+          struct ContentView: View {
+              var body: some View {
+                  VStack(spacing: 20) {
+                      Text("Пульт ворота")
+                          .font(.largeTitle)
+                          .padding(.top, 50)
+                      
+                      Button("Ворота 1") {
+                          if let url = URL(string: "tel://\(GATE1)") {
+                              UIApplication.shared.open(url)
+                          }
+                      }
+                      .frame(maxWidth: .infinity)
+                      .padding()
+                      .background(.green)
+                      .foregroundColor(.white)
+                      .cornerRadius(15)
+                      
+                      Button("Ворота 2") {
+                          if let url = URL(string: "tel://\(GATE2)") {
+                              UIApplication.shared.open(url)
+                          }
+                      }
+                      .frame(maxWidth: .infinity)
+                      .padding()
+                      .background(.blue)
+                      .foregroundColor(.white)
+                      .cornerRadius(15)
+                      
+                      Button("Калитка") {
+                          if let url = URL(string: "tel://\(WICKET)") {
+                              UIApplication.shared.open(url)
+                          }
+                      }
+                      .frame(maxWidth: .infinity)
+                      .padding()
+                      .background(.pink)
+                      .foregroundColor(.white)
+                      .cornerRadius(15)
+                      
+                      Spacer()
+                  }
+                  .padding()
+              }
+          }
+
+          @main
+          struct App: App {
+              var body: some Scene {
+                  WindowGroup {
+                      ContentView()
+                  }
+              }
+          }
+          EOF
+
+          # Компилируем
           mkdir -p Payload/GateOpener.app
-          cp Info.plist Payload/GateOpener.app/
-          cd Payload && zip -r app.ipa *
+          swiftc -target arm64-apple-ios15.0 \
+            -sdk $(xcrun --sdk iphoneos --show-sdk-path) \
+            -o Payload/GateOpener.app/GateOpener \
+            main.swift
+
+          # Info.plist
+          cat > Payload/GateOpener.app/Info.plist << EOF
+          <?xml version="1.0"?>
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>GateOpener</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.example.gateopener</string>
+              <key>CFBundleDisplayName</key>
+              <string>Пульт ворота</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+          </dict>
+          </plist>
+          EOF
+
+          # Пакуем IPA
+          cd Payload && zip -r ../app.ipa *
+
       - uses: actions/upload-artifact@v4
         with:
           name: app.ipa
